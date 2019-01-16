@@ -1,0 +1,179 @@
+library(GenomicRanges)
+library(GenomicAlignments)
+library(nlme)
+library(zoo)
+library(xts)
+library(FKF)
+resetEVN <- function(...){
+    scriptDir <- "/analysis_s130/chenzn/Project/LiCNV/task/20181201_Rpackage/scripts/scripts"
+    rfiles <- list.files(path=scriptDir, pattern=".R", all.files=TRUE, full.names=TRUE, recursive=FALSE, include.dirs=FALSE)
+    for (f in rfiles) {
+        source(f)
+    }
+}
+resetEVN()
+
+bams = c("/cdh/ngs/archive/20181027_wes_12/analysis/alignment/WES17FJ0400111/WES17FJ0400111.bam.dedup.bam",
+         "/cdh/ngs/archive/20181027_wes_12/analysis/alignment/WES18FJ0400414/WES18FJ0400414.bam.dedup.bam",
+         "/cdh/ngs/archive/20181027_wes_12/analysis/alignment/WES18FJ0400919/WES18FJ0400919.bam.dedup.bam")
+bedFile <- "/analysis_s140/reference/region/whole-exome-probes.bed"
+performCreateCovFile(bams, bedFile = bedFile, width = 1E2, thread = 4)
+
+test.sample <- c('WES17FJ0400111.cov')
+control.sample <- c('WES18FJ0400414.cov', 'WES18FJ0400919.cov')
+scale.totalbase <- computeMinTotalBase(c(test.sample, control.sample))
+createBaseline(control.sample, 'baseline.cov', total.base = scale.totalbase)
+createBaseline(c(test.sample, control.sample), 'baseline.cov', total.base = scale.totalbase, mode = 'shuffle')
+createBaseline(c(test.sample, control.sample), 'baseline.cov', total.base = scale.totalbase, mode = 'movingAverage')
+
+performFitCovFile('WES17FJ0400111.cov', 'WES17FJ0400111.fit', baselineFile = 'baseline.cov')
+performFitCovFile('WES17FJ0400111.cov', 'WES17FJ0400111.2.fit', controlFile = control.sample)
+performRunKflt('WES17FJ0400111.2.fit', 'WES17FJ0400111', 1E2, thread = 8)
+performCallCNV('WES17FJ0400111.state', annote.database = "/analysis_s140/reference/annovar_humandb/hg19_refGene.txt")
+
+###### 20181228 写batch
+getID <- function(file, ptn=NULL, ...) {    
+    sampleid  <- rev(unlist(strsplit(file, "/")))[1]
+    if(is.null(ptn)) {
+        sampleid  <- unlist(strsplit(sampleid, '\\.'))[1]
+    }else{
+        sampleid  <- unlist(strsplit(sampleid, ptn))[1]
+    }
+    sampleid
+}
+
+
+testBamFile = "/cdh/ngs/archive/20181130_wes_12/analysis/alignment/WES17FJ0400299/WES17FJ0400299.bam.dedup.bam"
+controlBamFile = "/cdh/ngs/archive/20181130_wes_12/analysis/alignment/MES18FJ1910010/MES18FJ1910010.bam.dedup.bam,/cdh/ngs/archive/20181130_wes_12/analysis/alignment/WES17FJ0400958/WES17FJ0400958.bam.dedup.bam,/cdh/ngs/archive/20181130_wes_12/analysis/alignment/WES18FJ0400460/WES18FJ0400460.bam.dedup.bam,/cdh/ngs/archive/20181130_wes_12/analysis/alignment/WES18FJ0401180/WES18FJ0401180.bam.dedup.bam"
+bedFile = "/analysis_s140/reference/region/whole-exome-probes.bed"
+outDir = "/analysis_s130/chenzn/Project/LiCNV/task/20181201_Rpackage/scripts/test"
+mode = "control"
+annote.database = "/analysis_s140/reference/annovar_humandb/hg19_refGene.txt"
+binSize = 1E2
+thread = 4
+gapwidth = 1E6
+threshold = 0
+min.probes = 1
+baselineFile = NULL
+is.plot = FALSE
+is.run.by.gender = FALSE
+
+
+controlBamFile <- unlist(strsplit(controlBamFile, ','))
+bamFiles <- c(testBamFile, controlBamFile)
+testID <- getID(testBamFile)
+controlID <- sapply(controlBamFile, getID)
+performCreateCovFile(bamFiles = bamFiles, bedFile = bedFile, outDir = outDir, width = binSize, thread = thread)
+testFile <- list.files(path=outDir, pattern=paste0(testID, ".cov$"), all.files=TRUE, full.names=TRUE, recursive=FALSE)
+controlFile <- lapply(controlID, function(id) {list.files(path=outDir, pattern=paste0(id, ".cov$"), all.files=TRUE, full.names=TRUE, recursive=FALSE)})
+controlFile <- unlist(controlFile)
+
+performFitCovFile(testFile = testFile, path = paste0(outDir, '/', testID, '.fit'), baselineFile = baselineFile, controlFile = controlFile)
+performRunKflt(file = paste0(outDir, '/', testID, '.fit'), binSize = binSize, outPrefix = paste0(outDir, '/', testID), thread = thread)
+performCallCNV(file = paste0(outDir, '/', testID, '.state'), outPrefix = paste0(outDir, '/', testID), id = testID, gapwidth = gapwidth, annote.database = annote.database, threshold = threshold, min.probes = min.probes)
+
+## 逻辑：
+## 判断bam文件有没有bai文件，没有或者bai文件不行的话就报错。 BamFile()可以判断有没有bai文件。
+## 如果bed是null，就默认分genome，如果binSize是null，则默认1E5。否则按binSize来。一定要分窗口
+## 如果bed有内容，则按bed，如果binSize是null，则不分bed。否则按binSize来
+## 如果controlBamFile是null，baselineFile也为null，则mode必须是shuffle或者movingAverage，否则报错。
+## 如果controlBamFile是null，如果baselineFile不为null，则用baselineFile。
+## 如果输入bed，bed里有X或者Y区域，才判断性别。否则均写未知。
+## 先去掉无法判断性别的样本。
+## 如果同性别的样本小于1个，则警报，然后不分性别跑
+## 计算平均深度，作为lower
+batchKflt(testBamFile = "/cdh/ngs/archive/20181130_wes_12/analysis/alignment/WES17FJ0400299/WES17FJ0400299.bam.dedup.bam",
+controlBamFile = "/cdh/ngs/archive/20181130_wes_12/analysis/alignment/MES18FJ1910010/MES18FJ1910010.bam.dedup.bam,/cdh/ngs/archive/20181130_wes_12/analysis/alignment/WES17FJ0400958/WES17FJ0400958.bam.dedup.bam,/cdh/ngs/archive/20181130_wes_12/analysis/alignment/WES18FJ0400460/WES18FJ0400460.bam.dedup.bam,/cdh/ngs/archive/20181130_wes_12/analysis/alignment/WES18FJ0401180/WES18FJ0401180.bam.dedup.bam",
+bedFile = "/analysis_s140/reference/region/whole-exome-probes.bed",
+outDir = "/analysis_s130/chenzn/Project/LiCNV/task/20181201_Rpackage/scripts/test",
+mode = "control",
+annote.database = "/analysis_s140/reference/annovar_humandb/hg19_refGene.txt",
+binSize = 1E2,
+thread = 4,
+gapwidth = 1E6,
+threshold = 0,
+min.probes = 1,
+baselineFile = NULL,
+is.plot = FALSE,
+is.run.by.gender = FALSE)
+
+## 画图 还是ggplot吧，ggplot好看
+library(ggplot2)
+file <- "WES17FJ0400299.state"
+id <- rev(unlist(strsplit(file, "/")))[1]
+id <- unlist(strsplit(id, "\\."))[1]
+indat <- read.table(file, header = TRUE, sep = "\t", quote = "", comment.char = "#", na.strings = "NA",
+    fill = TRUE, stringsAsFactors = FALSE)
+allchr <- as.character(as.vector(indat[,1]))
+unique_chr <- unique(allchr)
+if (grepl('chr', unique_chr[1])) {
+    unique_chr <- factor(unique_chr, levels = c(paste0('chr', seq(1, 22, 1)), 'chrX', 'chrY'))
+} else {
+    unique_chr <- factor(unique_chr, levels = c(as.character(seq(1, 22, 1)), 'X', 'Y'))
+}
+unique_chr <- sort(unique_chr)
+unique_chr <- as.character(as.vector(unique_chr))
+pdf(paste(id, "_state.pdf", sep=""), width = 8, height = 3)
+for (chr in unique_chr) {
+    idx <- which(allchr %in% chr)
+    df <- indat[idx, ]
+    df <- df[with(df, order(start, end)), ]
+    gr <- slidingWindows(GRanges(Rle(chr), IRanges(start = 1, end = max(df[, 'end']))), width = 1E7, step =  1E7)
+    gr <- unlist(gr)
+    # labs <- as.character(sapply(as.numeric(end(gr)), format, digits = 1, scientific = TRUE))
+    pos_label <- as.character(end(gr)/1E6)
+    pos_label[length(pos_label)] <- ''
+    pos_label <- c('0', pos_label)
+    plot_df <- data.frame(
+        position = c(df[, 'end'], df[, 'end'], df[, 'end']),
+        log2ratio = c(df[, 'statUp'], df[, 'statDown'], df[, 'log2ratio']),        
+        report = c(rep('ci',nrow(df)), rep('ci', nrow(df)), df[, 'report']))
+    plot_df$report <- as.factor(plot_df$report)
+    cols <- c("ci" = "gray", "average" = "gray50", "gain" = "red", "loss" = "green1")
+    p <- ggplot(plot_df, aes(x = position, y = log2ratio, color = report)) +
+        geom_point(na.rm = TRUE, size = 0.3) +
+        scale_colour_manual(values = cols, guide = FALSE) +
+        scale_y_continuous(limits = c(-4, 4)) +
+        scale_x_continuous(breaks = c(0, end(gr)), labels = pos_label )+
+        labs(title = paste0('chromosome ', chr), 
+            x = 'Chromosome Position (Mb)',
+            y = 'Log2 Ratio') +
+    theme(legend.title = element_text( size = rel(2.5)), legend.position = 'bottom', axis.text.x = element_text(size = 10, angle = 90)) 
+    print(p)
+}
+dev.off()
+
+
+
+
+plotKfltState("WES17FJ0400299.state", "WES17FJ0400299")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+设定成过去阿斯塔遇见的人不是小洋可能比较好。
+目前大纲是裘洛斯等小洋做完作业，图中被问到两人是怎么相遇的。
+随后小洋问你们在讨论什么啊，趁机把几个孩子集中在一起。
+阿海和旺财正打算发表感想的时候，狮子兽过来让贞德兽保护孩子们离开，说究极魔兽又来抓小孩纸了（促进进化协会）
+然后镜头一转贞德兽把孩子们带到了安全的地方，校园深处一个喷水池旁边。然后说要去帮狮子兽转身走了。
+然后小洋就很担心地问怎么办自己没有战斗过。
+小海说没关系，有我在，旺财说是啊是啊有我在，我会保护好你们的。
+突然【哟成长期居然这么自大】就看着一只完全体【那只像僵尸一样的】过来了。
+四个人马上作战姿势【小洋明显有点害怕不习惯的神情，一看就还不熟悉战斗，阿海毕竟战斗过一两次所以自信满满】
+镜头一转，裘洛斯跌落在地上，小洋紧张地抱住他。【你、你别过来】小洋紧紧地抱住裘洛斯，丝毫不在意它身上的尖刺已经刺穿自己的皮肤。
+【乖乖跟我走不就没事了】完全体蔑笑着【不像他俩，自讨苦吃】镜头一转是阿海和海狮兽倒在一起昏迷不醒的样子。
+【】
+
+
+

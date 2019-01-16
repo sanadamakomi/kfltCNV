@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1547619131402.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B5EFA76B",
+    "lastKnownWriteTime" : 1547622214,
+    "last_content_update" : 1547622241284,
+    "path" : "C:/rfile/20181201/test_scripts/test_package_example.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "23,0",
+        "scrollLine" : "18",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

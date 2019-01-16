@@ -1,0 +1,133 @@
+library(GenomicRanges)
+library(GenomicAlignments)
+library(nlme)
+library(zoo)
+library(xts)
+library(FKF)
+library(ggplot2)
+library(roxygen2)
+library(devtools)
+
+roxygen2::roxygenize(package.dir = "C:/rfile/20181201/kfltCNV")
+devtools::check(manual = TRUE)
+devtools::build_vignettes()
+devtools::build_manual(pkg = ".", path = './doc')
+devtools::build(vignettes = TRUE, manual = TRUE)
+devtools::install(build_vignettes = TRUE)
+
+library(kfltCNV)
+browseVignettes('kfltCNV')
+
+
+devtools::install_github("sanadamakomi/kfltCNV")
+
+## 创建一个vignette模板
+usethis::use_vignette("my-vignette")
+
+system.file("extdata", 'chr9_exome.bed', package ="kfltCNV")
+
+gr <- GRanges(Rle(c("1", "1", "2")),
+              IRanges(start = c(1 ,10000, 100), end = c(1000, 100000, 10000)))
+grangetoBed(gr, 'C:/rfile/20181201/test/target.bed')
+splitBed('C:/rfile/20181201/test/target.bed', 1E2)
+
+testBamFile <- system.file("extdata", 'testSample.bam', package ="kfltCNV")
+bamSeqinfo <- seqinfo(BamFile(testBamFile))
+splitGenome <- splitGenome(bamSeqinfo, width = 1E7)
+
+
+gr <- GRanges(Rle(c("1", "1", "2")), IRanges(start = c(1 ,10000, 100), end = c(1000, 100000, 10000)))
+grangetoBed(gr, 'C:/rfile/20181201/test/target.bed')
+bedtoGRange('C:/rfile/20181201/test/target.bed')
+
+testBamFile <- system.file("extdata", 'testSample.bam', package ="kfltCNV")
+bamSeqinfo <- seqinfo(BamFile(testBamFile))
+bedtoGRange('C:/rfile/20181201/test/target.bed', genomeSeqinfo = bamSeqinfo)
+
+testCovFile <- system.file("extdata", 'testSample.cov', package ="kfltCNV")
+
+bamPaths <- c(system.file("extdata", 'testSample.bam', package ="kfltCNV"),
+              system.file("extdata", 'controlSample.bam', package ="kfltCNV"))
+bedFile <- system.file("extdata", 'chr9_exome.bed', package ="kfltCNV")
+performCreateCovFile(bamPaths, bedFile = bedFile, thread = 1, outDir = 'C:/rfile/20181201/test')
+performCreateCovFile(system.file("extdata", 'controlSample2.bam', package ="kfltCNV"), bedFile = bedFile, thread = 1, outDir = 'C:/rfile/20181201/test')
+
+depthOfRegion(region = GRanges(Rle("9"), IRanges(start = 403225, end = 403345)),
+              bamPath = system.file("extdata", 'testSample.bam', package = "kfltCNV"))
+
+
+gr <- readCovFile(system.file("extdata", 'testSample.cov', package = "kfltCNV"))
+gr.shift <- shift(gr, shift = 10L)
+writeCovFile(gr.shift, 'C:/rfile/20181201/test/shift.cov')
+linearInterpolationCov(covFile = 'C:/rfile/20181201/test/shift.cov', axisFile = system.file("extdata", 'testSample.cov', package = "kfltCNV"))
+
+covmatrix <- mergerCovFiles(c(system.file("extdata", 'testSample.cov', package = "kfltCNV"),
+system.file("extdata", 'controlSample.cov', package = "kfltCNV"),
+system.file("extdata", 'controlSample2.cov', package = "kfltCNV")))
+normal.coveragematrix <- normalizeCovMatrix(covmatrix)
+normal <- createControlBaseline(normal.coveragematrix[, -4])
+
+
+testFile <- system.file("extdata", 'testSample.cov', package = "kfltCNV")
+controlFile <- c(system.file("extdata", 'controlSample.cov', package = "kfltCNV"),
+                 system.file("extdata", 'controlSample2.cov', package = "kfltCNV"))
+performFitCovFile(testFile, path = 'C:/rfile/20181201/test/testSample.fit', controlFile = controlFile)
+
+fitFile <- system.file("extdata", 'testSample.fit', package = "kfltCNV")
+performRunKflt(fitFile, 'C:/rfile/20181201/test/testSample', binSize = 1E2)
+
+performCallCNV(
+    file =  system.file("extdata", 'testSample.state', package = "kfltCNV"),
+    annote.database = system.file("extdata", 'hg19_refGene_chr10.txt', package = "kfltCNV"),
+    outPrefix = 'C:/rfile/20181201/test/testSample', threshold = 0, min.probes = 1)
+performCallCNV(
+    file =  system.file("extdata", 'testSample.state', package = "kfltCNV"),
+    outPrefix = 'C:/rfile/20181201/test/testSample', threshold = 0, min.probes = 1)
+
+file =  system.file("extdata", 'testSample.state', package = "kfltCNV")
+annote.database = system.file("extdata", 'hg19_refGene_chr9.txt', package = "kfltCNV")
+outPrefix = 'C:/rfile/20181201/test/testSample'
+id = NULL
+gapwidth = 500
+out.type = 'all'
+threshold = 0.5
+min.probes = 30
+
+annote.file <- annovateBedFormat(x = file, y = paste0(outPrefix, '.anno.state'), annote.database = annote.database)
+
+
+
+loss <- callLossCNV(system.file("extdata", 'testSample.state', package = "kfltCNV"), 0)
+gene <- callCNVGene(system.file("extdata", 'testSample.anno.state', package = "kfltCNV"), 0)
+
+
+outputTable(loss, filepath = 'cnv.result.txt',
+info.vec =  c("svtype", "svlen", "end", "log2ratio", "probe", "depth", "baseline"))
+
+outputVcf(loss, filepath = 'cnv.result.vcf', id = 'testSample',
+info.vec =  c("svtype", "svlen", "end", "log2ratio", "probe", "depth", "baseline"))
+#'
+#' # vcf file adding gene
+outputVcf(gene, filepath = 'cnv.result.vcf', id = 'testSample',
+info.vec =  c("svtype", "end", 'gene', "log2ratio", "probe", "depth", "baseline"),
+addinfo = '##INFO=<ID=GENE,Number=1,Type=String,Description="Gene symbol">')
+
+
+covmatrix <- mergerCovFiles(c(system.file("extdata", 'testSample.cov', package = "kfltCNV"),
+system.file("extdata", 'controlSample.cov', package = "kfltCNV"),
+system.file("extdata", 'controlSample2.cov', package = "kfltCNV")))
+plotCoverageUniformity(covmatrix)
+
+plotKfltResult(system.file("extdata", 'testSample.state', package = "kfltCNV"), 'C:/rfile/20181201/test/testSample')
+
+
+testBamFile <- system.file("extdata", 'testSample.bam', package ="kfltCNV")
+controlBamFile <- paste0(system.file("extdata", 'controlSample.bam', package ="kfltCNV"),
+                         system.file("extdata", 'controlSample2.bam', package ="kfltCNV"))
+bedFile <- system.file("extdata", 'chr10_exome.bed', package ="kfltCNV")
+binSize <- 1E2
+outDir <- "C:/rfile/20181201/test"
+
+kfltBatch(testBamFile, controlBamFile = controlBamFile, bedFile = bedFile, outDir = outDir)
+
+bamFiles<-testBamFile
