@@ -38,4 +38,8 @@ kfltBatch(testBam, controlBamFile = controlBam, bedFile = bed)
 kfltBatch(testBam, controlBamFile = controlBam, bedFile = bed, annote.database = annotate, outDir = '.')
 ```
 
-See details in `kfltCNV-vignette`.
+See details in `kfltCNV-vignette`:
+
+```
+browseVignettes('kfltCNV')
+```
