@@ -8,7 +8,7 @@ It can be installed from github:
 devtools::install_github('sanadamakomi/kfltCNV')
 ```
 
-If you wants to build the vignettes, run:
+If you want to build the vignettes, run:
 
 ```
 devtools::install_github('sanadamakomi/kfltCNV', 
