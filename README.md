@@ -1,5 +1,5 @@
 # kfltCNV
-A tool for calling CNV (Copy number variations) by the Kalman Filter
+A tool for calling CNV (Copy number variations) by the Kalman Filter.
 
 ## Install
 It can be installed from github:
@@ -13,12 +13,6 @@ If you want to build the vignettes, run:
 ```
 devtools::install_github('sanadamakomi/kfltCNV', 
   build = TRUE, build_opts = c("--no-resave-data"), force = TRUE)
-```
-
-Then
-
-```
-browseVignettes('kfltCNV')
 ```
 
 ## Test 
