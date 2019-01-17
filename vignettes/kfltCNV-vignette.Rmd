@@ -336,7 +336,7 @@ plotKfltResult(stateFile)
 
 The result is a scatterplot and each dark gray point represents the depth of region. The region with copy number gain and loss will respectively colored with red and green. And gray points are data of `statusUp` and `statusDown` in the state file.
 
-```{r pressure, echo = FALSE, fig.cap = "A caption", out.width = '150%'}
+```{r pressure, echo = FALSE, fig.cap = "Scatterplot of CNV result", out.width = '100%'}
 knitr::include_graphics("testSample_state.png")
 ```
 

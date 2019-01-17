@@ -13,6 +13,7 @@ devtools::check(manual = TRUE)
 devtools::build_vignettes()
 devtools::build_manual(pkg = ".", path = './doc')
 devtools::build(vignettes = TRUE, manual = TRUE)
+remove.packages("kfltCNV")
 devtools::install(build_vignettes = TRUE)
 
 library(kfltCNV)

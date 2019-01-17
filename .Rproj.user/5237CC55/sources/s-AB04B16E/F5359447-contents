@@ -81,7 +81,7 @@ plotKfltResult <- function(file) {
         p <- ggplot(df, aes_string(x = 'end', y = 'log2ratio', color = 'report')) +
             geom_ribbon(aes_string(ymin = 'statUp', ymax = 'statDown'),
                         fill = "gray", color = NA, alpha = 0.5) +
-            geom_point(aes_string(y = "log2ratio"), na.rm = TRUE, size = 0.4) +
+            geom_point(aes_string(y = "log2ratio"), na.rm = TRUE, size = 0.2) +
             scale_colour_manual(values = cols, guide = FALSE) +
             scale_y_continuous(limits = c(-4, 4)) +
             scale_x_continuous(breaks = c(0, end(gr)), labels = pos_label )+
