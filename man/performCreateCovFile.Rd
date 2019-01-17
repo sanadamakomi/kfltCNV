@@ -50,9 +50,9 @@ The input BAM file need a BAM index file (<filename>.bai). The index
   the \emph{batch} option limits the number of GRanges in a batch to run in a
   thread.
 
-  The result are coverage files (<filename>.cov) which have four
-  columns indicate chromosome name, chromosome start, chromosome end and
-  depth of coverage, without a header line.
+  The result are coverage files (<filename>.cov) which have four columns
+  indicating chromosome name, chromosome start, chromosome end and depth of
+  coverage, without a header line.
 }
 \examples{
 ####### Perform calculating depth of coverage #######
