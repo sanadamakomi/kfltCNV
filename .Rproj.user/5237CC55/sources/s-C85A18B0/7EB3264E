@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1547692142152.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "7EB3264E",
+    "lastKnownWriteTime" : 1547690755,
+    "last_content_update" : 1547690755,
+    "path" : "C:/rfile/20181201/kfltCNV/vignettes/kfltCNV-vignette.Rmd",
+    "project_path" : "vignettes/kfltCNV-vignette.Rmd",
+    "properties" : {
+        "cursorPosition" : "33,560",
+        "scrollLine" : "31"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
