@@ -15,6 +15,12 @@ devtools::install_github('sanadamakomi/kfltCNV',
   build = TRUE, build_opts = c("--no-resave-data"), force = TRUE)
 ```
 
+Then
+
+```
+browseVignettes('kfltCNV')
+```
+
 ## Test 
 
 There are test Data in the directory 'kfltCNV/inst/extdata', run scripts in R console:
