@@ -43,3 +43,7 @@ See details in `kfltCNV-vignette`:
 ```
 browseVignettes('kfltCNV')
 ```
+
+# Update
+
+2019.2.27 Add 'badDepth' option to kfltBatch(). 

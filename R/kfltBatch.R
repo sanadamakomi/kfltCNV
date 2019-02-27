@@ -12,6 +12,8 @@
 #' @param annote.database A character string of \emph{refGene.txt} file path. It
 #'   can be download from \href{http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database}{UCSC database ftp}.
 #'   And \emph{refGene.txt} from \emph{Annovar} database is supported, too.
+#' @param badDepth A numeric value; a baseline depth low than badDepth will be
+#'   set to \code{NA}.
 #' @param gapwidth A non-negative integer indicates the maximum gap width
 #'   between CNV region to ignore.
 #' @param threshold A non-negative numeric value. A CNV of which log2 ratio is
@@ -39,7 +41,7 @@
 #' bedFile <- system.file("extdata", 'chr10_exome.bed', package ="kfltCNV")
 #' binSize <- 1E2
 #' kfltBatch(testBamFile, controlBamFile = controlBamFile, bedFile = bedFile, binSize = 1E2)
-kfltBatch <- function(testBamFile, controlBamFile = NULL, baselineFile = NULL, mode = 'control', bedFile = NULL, binSize = NULL, outDir = NULL, annote.database = NULL, thread = 1, gapwidth = 0, threshold = 0, min.probes = 1, is.plot = TRUE, is.run.by.gender = FALSE, shuffle.ifByChr = FALSE, moveAverage.step = 10 ) {
+kfltBatch <- function(testBamFile, controlBamFile = NULL, baselineFile = NULL, mode = 'control', bedFile = NULL, binSize = NULL, outDir = NULL, annote.database = NULL, thread = 1, badDepth = 10, gapwidth = 0, threshold = 0, min.probes = 1, is.plot = TRUE, is.run.by.gender = FALSE, shuffle.ifByChr = FALSE, moveAverage.step = 10 ) {
 
     if (is.null(outDir)) outDir <- normalizePath('.')
     if (! dir.exists(outDir)) dir.create(outDir)
@@ -80,7 +82,7 @@ kfltBatch <- function(testBamFile, controlBamFile = NULL, baselineFile = NULL, m
             controlFile <- unlist(controlFile)
 
         }
-        performFitCovFile(testFile = testFile, path = paste0(outDir, '/', testID, '.fit'), baselineFile = baselineFile, controlFile = controlFile)
+        performFitCovFile(testFile = testFile, path = paste0(outDir, '/', testID, '.fit'), baselineFile = baselineFile, controlFile = controlFile, badDepth = badDepth)
 
     } else if (mode %in% 'shuffle' | mode %in% 'movingAverage') {
 
@@ -90,7 +92,7 @@ kfltBatch <- function(testBamFile, controlBamFile = NULL, baselineFile = NULL, m
         testID <- getID(testBamFile)
         testFile <- list.files(path = outDir, pattern = paste0(testID, ".cov$"), all.files = TRUE, full.names = TRUE, recursive = FALSE)
         createBaseline(x = paste0(outDir, '/', testID, ".cov"), path = paste0(outDir, "/baseline.cov"), mode = mode, ifByChr = shuffle.ifByChr, step = moveAverage.step)
-        performFitCovFile(testFile = testFile, path = paste0(outDir, '/', testID, '.fit'), baselineFile = paste0(outDir, "/baseline.cov"))
+        performFitCovFile(testFile = testFile, path = paste0(outDir, '/', testID, '.fit'), baselineFile = paste0(outDir, "/baseline.cov"), badDepth = badDepth)
 
     } else {
         stop("Mode must be 'control', 'shuffle' or 'movingAverage'.")

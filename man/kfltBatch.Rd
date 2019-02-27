@@ -6,9 +6,10 @@
 \usage{
 kfltBatch(testBamFile, controlBamFile = NULL, baselineFile = NULL,
   mode = "control", bedFile = NULL, binSize = NULL, outDir = NULL,
-  annote.database = NULL, thread = 1, gapwidth = 0, threshold = 0,
-  min.probes = 1, is.plot = TRUE, is.run.by.gender = FALSE,
-  shuffle.ifByChr = FALSE, moveAverage.step = 10)
+  annote.database = NULL, thread = 1, badDepth = 10, gapwidth = 0,
+  threshold = 0, min.probes = 1, is.plot = TRUE,
+  is.run.by.gender = FALSE, shuffle.ifByChr = FALSE,
+  moveAverage.step = 10)
 }
 \arguments{
 \item{testBamFile}{A character string of test BAM file path.}
@@ -31,6 +32,9 @@ can be download from \href{http://hgdownload.cse.ucsc.edu/goldenPath/hg19/databa
 And \emph{refGene.txt} from \emph{Annovar} database is supported, too.}
 
 \item{thread}{A non-negative integer providing the number of threads.}
+
+\item{badDepth}{A numeric value; a baseline depth low than badDepth will be
+set to \code{NA}.}
 
 \item{gapwidth}{A non-negative integer indicates the maximum gap width
 between CNV region to ignore.}
