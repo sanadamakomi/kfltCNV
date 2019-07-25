@@ -261,13 +261,13 @@ Call CNVs from result of the Kalman Filter. `kfltCNV::performCallCNV()` is a bat
 
 ```{r, eval = FALSE, echo = TRUE}
 stateFile <- system.file("extdata", 'testSample.state', package = "kfltCNV")
-performCallCNV(fitFile)
+performCallCNV(stateFile)
 ```
 
 By the way if you would like to output the CNV result by gene, you could input the annotation file to `annote.database`.
 
 ```{r, eval = FALSE, echo = TRUE}
-performCallCNV(fitFile, annote.database = annotate)
+performCallCNV(stateFile, annote.database = annotate)
 ```
 
 The result can be a VCF file or a tabular file based on `out.type`. The VCF file format is [VCFv4.2](https://samtools.github.io/hts-specs/VCFv4.2.pdf). And the tabular file has nine columns while a gene CNV result will also have a column named `gene` if you input an annotation database file. 
@@ -306,7 +306,7 @@ Then `kfltCNV::callGainCNV()` and  `kfltCNV::callLossCNV()` could be use to call
 annoStateFile <- system.file("extdata", 'testSample.anno.state', package = "kfltCNV")
 gain <- callGainCNV(stateFile, gapwidth = 0)
 loss <- callLossCNV(stateFile, gapwidth = 0)
-gene <- callCNVGene(stateFile, gapwidth = 0)
+gene <- callCNVGene(annoStateFile, gapwidth = 0)
 ```
 
 After calling, you could use `kfltCNV::outputTable()` and `kfltCNV::outputVcf` to output results. `info.vec` is required and the function will return elements from column names in `info.vec`. In addition the option `threshold` and `min.probes` are used to control which CNVs will be reported.
