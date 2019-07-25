@@ -12,7 +12,7 @@ If you want to build the vignettes, run:
 
 ```
 devtools::install_github('sanadamakomi/kfltCNV', 
-  build = TRUE, build_opts = c("--no-resave-data"), force = TRUE)
+  build = TRUE, build_vignettes = TRUE, build_opts = c("--no-resave-data"), force = TRUE)
 ```
 
 ## Test 
