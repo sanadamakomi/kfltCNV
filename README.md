@@ -47,3 +47,4 @@ browseVignettes('kfltCNV')
 # Update
 
 2019.2.27 Add 'badDepth' option to kfltBatch(). 
+2019.7.29 Modify vignettes.rmd.
